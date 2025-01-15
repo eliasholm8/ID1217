@@ -1,6 +1,6 @@
 # Variables
 CC = gcc
-CFLAGS = -Wall -Wextra -O2
+CFLAGS = -Wall -Wextra -O0 -lpthread
 SRC_FILES = $(wildcard *.c)
 OUT_DIR = out
 OUT_FILES = $(patsubst %.c,$(OUT_DIR)/%.out,$(SRC_FILES))

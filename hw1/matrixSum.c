@@ -20,6 +20,7 @@
 #include <sys/time.h>
 #define MAXSIZE 10000  /* maximum matrix size */
 #define MAXWORKERS 10   /* maximum number of workers */
+#define DEBUG
 
 pthread_mutex_t barrier;  /* mutex lock for the barrier */
 pthread_cond_t go;        /* condition variable for leaving */
@@ -82,9 +83,11 @@ int main(int argc, char *argv[]) {
   stripSize = size/numWorkers;
 
   /* initialize the matrix */
+  srand(time(NULL));
+
   for (i = 0; i < size; i++) {
 	  for (j = 0; j < size; j++) {
-          matrix[i][j] = 1;//rand()%99;
+          matrix[i][j] = 1; //rand()%99;
 	  }
   }
 
@@ -137,4 +140,6 @@ void *Worker(void *arg) {
     printf("The total is %d\n", total);
     printf("The execution time is %g sec\n", end_time - start_time);
   }
+  
+  return 0;
 }
