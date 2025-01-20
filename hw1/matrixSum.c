@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <sys/time.h>
+#include <limits.h>
 #define MAXSIZE 10000  /* maximum matrix size */
 #define MAXWORKERS 10   /* maximum number of workers */
 #define DEBUG
@@ -58,12 +59,21 @@ int size, stripSize;  /* assume size is multiple of numWorkers */
 int sums[MAXWORKERS]; /* partial sums */
 int matrix[MAXSIZE][MAXSIZE]; /* matrix */
 int max_values[MAXWORKERS], min_values[MAXWORKERS];
-int max_position[MAXWORKERS];
+int max_index[MAXWORKERS], min_index[MAXWORKERS];
+
+void init_array() {
+  for (int i = 0; i < MAXWORKERS; i++) {
+    min_index[i] = INT_MAX;
+    min_values[i] = INT_MAX;
+  }
+}
 
 void *Worker(void *);
 
 /* read command line, initialize, and create threads */
 int main(int argc, char *argv[]) {
+
+  init_array();
   int i, j;
   long l; /* use long in case of a 64-bit system */
   pthread_attr_t attr;
@@ -132,8 +142,13 @@ void *Worker(void *arg) {
       total += matrix[i][j];
       if (matrix[i][j] > max_values[myid]) {
         max_values[myid] = matrix[i][j];
-        max_position[myid] = j;
+        max_index[myid] = j;
       }
+      if (matrix[i][j] < min_values[myid]) {
+        min_values[myid] = matrix[i][j];
+        min_index[myid] = j;
+      }
+      
       
     }
   sums[myid] = total;
@@ -141,10 +156,13 @@ void *Worker(void *arg) {
   if (myid == 0) {
     total = 0;
     max = 0;
+    min = INT_MAX;
     for (i = 0; i < numWorkers; i++) {
       total += sums[i];
       if (max_values[i] > max)
         max = max_values[i];
+      if (min_values[i] < min)
+        min = min_values[i];
     }
     /* get end time */
     end_time = read_timer();
@@ -152,10 +170,14 @@ void *Worker(void *arg) {
 
     for (int i = 0; i < numWorkers; i++) {
       printf("max[%d]: %d\n", i, max_values[i]);
-      printf("index: %d\n\n", max_position[i]);
+      printf("index: %d\n", max_index[i]);
+      printf("min[%d]: %d\n", i, min_values[i]);
+      printf("index: %d\n\n", min_index[i]);
+
     }
     
-    printf("%d\n", max);
+    printf("Global max: %d\n", max);
+    printf("Global min: %d\n", min);
     printf("The total is %d\n", total);
     printf("The execution time is %g sec\n", end_time - start_time);
   }
