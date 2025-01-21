@@ -19,14 +19,27 @@
 #include <time.h>
 #include <sys/time.h>
 #include <limits.h>
+#include <unistd.h>
+
 #define MAXSIZE 10000 /* maximum matrix size */
 #define MAXWORKERS 10 /* maximum number of workers */
-//#define DEBUG
+// #define DEBUG
 
 pthread_mutex_t barrier; /* mutex lock for the barrier */
 pthread_cond_t go;		 /* condition variable for leaving */
 int numWorkers;			 /* number of workers */
 int numArrived = 0;		 /* number who have arrived */
+
+int next_row_counter = 0;
+pthread_mutex_t next_row_counter_mutex;
+
+int get_next_row()
+{
+	pthread_mutex_lock(&next_row_counter_mutex);
+	int row = next_row_counter++;
+	pthread_mutex_unlock(&next_row_counter_mutex);
+	return row;
+}
 
 /* a reusable counter barrier */
 void Barrier()
@@ -87,6 +100,7 @@ int main(int argc, char *argv[])
 
 	/* initialize mutex and condition variable */
 	pthread_mutex_init(&barrier, NULL);
+	pthread_mutex_init(&next_row_counter_mutex, NULL);
 	pthread_cond_init(&go, NULL);
 
 	/* read command line args if any */
@@ -177,40 +191,38 @@ int main(int argc, char *argv[])
 void *Worker(void *arg)
 {
 	long myid = (long)arg;
-	int i, j, first, last;
 	int total, min, max;
 	int min_pos, max_pos;
 
-	/* determine first and last rows of my strip */
-	first = myid * stripSize;
-	last = (myid == numWorkers - 1) ? (size - 1) : (first + stripSize - 1);
-
 #ifdef DEBUG
-	pthread_mutex_lock(&barrier);
-	printf("worker %ld (pthread id %lu) has started\n", myid, (unsigned long)pthread_self());
-	printf("first: %d\n", first);
-	printf("last: %d\n\n", last);
-	pthread_mutex_unlock(&barrier);
+	printf("INIT: worker %ld (pthread id %lu) has started\n", myid, (unsigned long)pthread_self());
 #endif
 
 	/* sum values in my strip */
 	total = 0;
 	min = INT_MAX;
 	max = INT_MIN;
-	for (i = first; i <= last; i++)
+
+	int cur_row;
+	int i;
+
+	while ((cur_row = get_next_row()) < size)
 	{
-		for (j = 0; j < size; j++)
+#ifdef DEBUG
+		printf("TASK: worker %ld started working on row #%d\n", myid, cur_row);
+#endif
+		for (i = 0; i < size; i++)
 		{
-			total += matrix[i][j];
-			if (matrix[i][j] > max)
+			total += matrix[cur_row][i];
+			if (matrix[cur_row][i] > max)
 			{
-				max = matrix[i][j];
-				max_pos = i * size + j;
+				max = matrix[cur_row][i];
+				max_pos = cur_row * size + i;
 			}
-			if (matrix[i][j] < min)
+			if (matrix[cur_row][i] < min)
 			{
-				min = matrix[i][j];
-				min_pos = i * size + j;
+				min = matrix[cur_row][i];
+				min_pos = cur_row * size + i;
 			}
 		}
 	}
@@ -223,6 +235,4 @@ void *Worker(void *arg)
 	result->min_pos = min_pos;
 
 	pthread_exit((void *)result);
-
-	return 0;
 }
