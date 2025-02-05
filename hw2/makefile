@@ -1,5 +1,5 @@
 # Variables
-CC = gcc
+CC = gcc-14
 CFLAGS = -Wall -Wextra -O0 -fopenmp
 SRC_FILES = $(wildcard *.c)
 OUT_DIR = out
