@@ -110,12 +110,17 @@ void reverse_string(char *str)
 /// @return The exit code of the program.
 int main(int argc, char *argv[])
 {
+    int num_threads = 1;
+    
     // Check if the file name is provided.
     if (argc < 2)
     {
         printf("Missing arguments. %d\n", argc);
         return 1;
     }
+    num_threads = atoi(argv[2]);
+    if (num_threads < 1) num_threads = 1;
+    omp_set_num_threads(num_threads);
 
     // Open the file.
     file_pointer = fopen(argv[1], "r");
@@ -130,8 +135,16 @@ int main(int argc, char *argv[])
     read_lines();
     sort_lines();
 
+
+    // Get the start time
+    double start_time = omp_get_wtime();
+    #pragma omp parallel for
     for (int i = 0; i < line_count; i++)
     {
+
+        //int thread_id = omp_get_thread_num(); // Get thread ID
+        //printf("Thread %d processing line %d\n", thread_id, i);
+
         // Set the current line.
         char *current_line = lines[i];
 
@@ -157,12 +170,16 @@ int main(int argc, char *argv[])
         // If the reversed line is found in the sorted lines.
         if (index != -1)
         {
-            printf("Semordnilaps: %s @ %d\n", current_line, index);
+            //printf("Semordnilaps: %s @ %d\n", current_line, index);
         }
 
         // Free the memory of the line.
         free(reversed_line);
     }
+
+    double end_time = omp_get_wtime();
+    double elapsed = end_time - start_time;
+    printf("time: %f\n",elapsed);
 
     return 0;
 }
