@@ -14,7 +14,8 @@ char **lines;
 char **palindromes;
 char **semordnilaps;
 
-// Create function to count the number of lines in the file.
+/// @brief Function used to count the number of lines in the input file.
+/// @return The number of lines in the file.
 int count_lines()
 {
     // Initialize the count and a variable for the current character.
@@ -31,17 +32,29 @@ int count_lines()
         }
     }
 
+    // Get the last char.
+    fseek(file_pointer, -1, SEEK_END);
+    ch = fgetc(file_pointer);
+
+    // Add a line if the last character is not a newline.
+    if (ch != '\n')
+    {
+        count++;
+    }
+
     // Return to the start of the file.
     fseek(file_pointer, 0, SEEK_SET);
+
+    printf("Number of words: %d\n", count);
 
     // Return the number of lines we found.
     return count;
 }
 
-// Create function to read the lines from the file.
+/// @brief Function used to read the lines from the input file.
 void read_lines()
 {
-    // Count the number of lines/words in the files, and initialize the counts.
+    // Count the number of lines/words in the files.
     line_count = count_lines();
 
     // Allocate arrays for the maximum number of words.
@@ -78,7 +91,10 @@ void read_lines()
     }
 }
 
-// Create helper function to compare two strings.
+/// @brief Helper function used to compare two strings.
+/// @param a The first string.
+/// @param b The other string to compare with.
+/// @return Integer of which order the first string compares to the other.
 int compare_func(const void *a, const void *b)
 {
     const char *first = *(const char **)a;
@@ -86,13 +102,15 @@ int compare_func(const void *a, const void *b)
     return strcmp(first, second);
 }
 
-// Create function to sort the lines alphabetically using built-in qsort.
+/// @brief Function used to sort all the lines in the array.
 void sort_lines()
 {
     qsort(lines, line_count, sizeof(char *), compare_func);
 }
 
-// Function to find a line using binary search.
+/// @brief Function used to find a specific string in the array.
+/// @param to_find The string to find in the array.
+/// @return The index of the found string or -1 if it wasn't found.
 int find_line(char *to_find)
 {
     // Create variables for low and high-
@@ -119,7 +137,8 @@ int find_line(char *to_find)
     return -1;
 }
 
-// Function to reverse a string.
+/// @brief Function used to reverse a string.
+/// @param str A string pointer for the string to be reversed.
 void reverse_string(char *str)
 {
     // Get the length of the string.
@@ -134,6 +153,7 @@ void reverse_string(char *str)
     }
 }
 
+/// @brief Function used to find the palindromes and semordnilaps in the array.
 void find_words()
 {
     // Allocate array for palindromes and semordnilaps, and initialize counts.
@@ -145,8 +165,8 @@ void find_words()
     // Get the start time of the concurrent part of the program.
     double start_time = omp_get_wtime();
 
-    // Parallelize this part of the program.
-    #pragma omp parallel
+// Parallelize this part of the program.
+#pragma omp parallel
     {
         // Create local arrays and counters for each thread.
         char *local_palindromes[line_count];
@@ -154,11 +174,10 @@ void find_words()
         int local_palindromes_count = 0;
         int local_semordnilaps_count = 0;
 
-        // Parallelize the for loop, between the threads.
-        #pragma omp for nowait
+// Parallelize the for loop, between the threads.
+#pragma omp for
         for (int i = 0; i < line_count; i++)
         {
-
             // Set the current line.
             char *current_line = lines[i];
 
@@ -182,8 +201,8 @@ void find_words()
             free(reversed_line);
         }
 
-        // Wait for all threads to arrive to this point.
-        #pragma omp critical
+// Allow allow one thread at a time to summarize the results.
+#pragma omp critical
         {
             // Loop through the local results and add them to the global results.
             for (int i = 0; i < local_palindromes_count; i++)
@@ -202,9 +221,10 @@ void find_words()
     double elapsed = end_time - start_time;
 
     // Print the elapsed time.
-    printf("time: %f\n", elapsed);
+    printf("Concurrent processing time: %f sec\n", elapsed);
 }
 
+/// @brief Function used to print the results to a results.txt file.
 void print_results()
 {
     // Open the output file for writing.
@@ -267,6 +287,17 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Check so that the file is not empty.
+    fseek(file_pointer, 0, SEEK_END);
+    if (ftell(file_pointer) == 0)
+    {
+        printf("Input file is empty.\n");
+        return 1;
+    }
+
+    // Return to the start of the file.
+    fseek(file_pointer, 0, SEEK_SET);
+
     // Read the words from the same file and ensure that they are sorted.
     read_lines();
     sort_lines();
@@ -283,6 +314,14 @@ int main(int argc, char *argv[])
 
     // Print the results to the output file.
     print_results();
+
+    // Free the memory of the arrays.
+    for (int i = 0; i < line_count; i++) {
+        free(lines[i]);
+    }
+    free(lines);
+    free(palindromes);
+    free(semordnilaps);
 
     // Return success.
     return 0;
