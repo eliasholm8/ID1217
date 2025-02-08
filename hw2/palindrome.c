@@ -168,14 +168,12 @@ void find_words()
             // Reverse the line.
             reverse_string(reversed_line);
 
-            // Check if the reversed line is the same as the original line.
+            // Check if the reversed line is the same as the original line, or if it is a semordnilap.
             if (strcmp(current_line, reversed_line) == 0)
             {
                 local_palindromes[local_palindromes_count++] = current_line;
             }
-
-            // Check if the reversed line is found in the sorted lines.
-            if (find_line(reversed_line) != -1)
+            else if (find_line(reversed_line) != -1)
             {
                 local_semordnilaps[local_semordnilaps_count++] = current_line;
             }
