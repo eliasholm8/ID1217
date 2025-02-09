@@ -165,55 +165,43 @@ void find_words()
     // Get the start time of the concurrent part of the program.
     double start_time = omp_get_wtime();
 
-// Parallelize this part of the program.
-#pragma omp parallel
+    // Parallelize the for loop, between the threads.
+    #pragma omp parallel for
+    for (int i = 0; i < line_count; i++)
     {
-        // Create local arrays and counters for each thread.
-        char *local_palindromes[line_count];
-        char *local_semordnilaps[line_count];
-        int local_palindromes_count = 0;
-        int local_semordnilaps_count = 0;
+        // Set the current line.
+        char *current_line = lines[i];
 
-// Parallelize the for loop, between the threads.
-#pragma omp for
-        for (int i = 0; i < line_count; i++)
+        // Create a copy of the line.
+        char *reversed_line = strdup(current_line);
+
+        // Reverse the line.
+        reverse_string(reversed_line);
+
+        // Check if the reversed line is the same as the original line, or if it is a semordnilap.
+        if (strcmp(current_line, reversed_line) == 0)
         {
-            // Set the current line.
-            char *current_line = lines[i];
+            // Increment the count of the palindromes atomically.
+            int insert_index;
+            #pragma omp atomic capture
+            insert_index = palindromes_count++;
 
-            // Create a copy of the line.
-            char *reversed_line = strdup(current_line);
+            // Store the palindrome in the array.
+            palindromes[insert_index] = current_line;
+        }
+        else if (find_line(reversed_line) != -1)
+        {
+            // Increment the count of the palindromes atomically.
+            int insert_index;
+            #pragma omp atomic capture
+            insert_index = semordnilaps_count++;
 
-            // Reverse the line.
-            reverse_string(reversed_line);
-
-            // Check if the reversed line is the same as the original line, or if it is a semordnilap.
-            if (strcmp(current_line, reversed_line) == 0)
-            {
-                local_palindromes[local_palindromes_count++] = current_line;
-            }
-            else if (find_line(reversed_line) != -1)
-            {
-                local_semordnilaps[local_semordnilaps_count++] = current_line;
-            }
-
-            // Free the memory of the line.
-            free(reversed_line);
+            // Store the palindrome in the array.
+            semordnilaps[insert_index] = current_line;
         }
 
-// Allow allow one thread at a time to summarize the results.
-#pragma omp critical
-        {
-            // Loop through the local results and add them to the global results.
-            for (int i = 0; i < local_palindromes_count; i++)
-            {
-                palindromes[palindromes_count++] = local_palindromes[i];
-            }
-            for (int i = 0; i < local_semordnilaps_count; i++)
-            {
-                semordnilaps[semordnilaps_count++] = local_semordnilaps[i];
-            }
-        }
+        // Free the memory of the line.
+        free(reversed_line);
     }
 
     // Get the end time and calculate the elapsed time.
@@ -316,7 +304,8 @@ int main(int argc, char *argv[])
     print_results();
 
     // Free the memory of the arrays.
-    for (int i = 0; i < line_count; i++) {
+    for (int i = 0; i < line_count; i++)
+    {
         free(lines[i]);
     }
     free(lines);
