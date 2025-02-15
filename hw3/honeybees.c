@@ -7,6 +7,7 @@
 #include <semaphore.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #define mutex_lock_name "./mutex_lock"
 #define wake_bear_signal_name "./wake_bear_signal"
