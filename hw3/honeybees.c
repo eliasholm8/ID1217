@@ -55,7 +55,7 @@ void *bee_worker(void *arg)
     pthread_exit(NULL);
 }
 
-void *parent_worker()
+void *bear_worker()
 {
     // Loop indefinitely.
     while (true)
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     }
 
     // Create a thread for the bear.
-    pthread_create(&bear_thread, &attr, parent_worker, NULL);
+    pthread_create(&bear_thread, &attr, bear_worker, NULL);
 
     // Wait for the bee threads to finish.
     for (int i = 0; i < num_of_bees; i++)
