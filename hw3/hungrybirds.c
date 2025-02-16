@@ -9,9 +9,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define mutex_lock_name "./mutex_lock"
-#define refill_signal_name "./refill_signal"
-#define worms_available_name "./worms_available"
+#define mutex_lock_name "/mutex_lock"
+#define refill_signal_name "/refill_signal"
+#define worms_available_name "/worms_available"
 
 sem_t *mutex_lock;
 sem_t *refill_signal;
