@@ -1,4 +1,4 @@
-package hw4;
+package hw4.hungrybirds;
 import java.util.Random;
 
 public class ParentBird implements Runnable {

@@ -1,5 +1,7 @@
-package hw4;
+package hw4.hungrybirds;
 
+
+//
 public class Dish {
     private int wormCount;
     private final int wormsToAdd;
